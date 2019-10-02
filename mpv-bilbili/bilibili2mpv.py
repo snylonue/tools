@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import subprocess
+import argparse
 
-def main(url):
+def main(url,hwdec):
 	rescmd=subprocess.run(f'you-get {url} -u',shell=True,stdout=subprocess.PIPE)
 	getout=rescmd.stdout.decode().strip().split('\r\n')
 	for x,v in enumerate(getout):
@@ -15,12 +16,17 @@ def main(url):
 	assert urls
 	if len(urls)==2:
 		cmd=f"""mpv "{urls[0]}" --audio-file="{urls[1]}" --referrer="https://www.bilibili.com" --no-ytdl \
---dither=fruit"""
+--dither=fruit --hwdec={hwdec}"""
 	else:
 		cmd=f"""mpv {'"'+'" "'.join(urls)+'"'} --referrer="https://www.bilibili.com" --no-ytdl --merge-files \
---dither=fruit"""
+--dither=fruit --hwdec={hwdec}"""
 	assert cmd
 	subprocess.run(cmd,shell=True)
 
 if __name__ == '__main__':
-	main(input())
+	parser=argparse.ArgumentParser(description='play bilibili vedio with mpv')
+	parser.add_argument('url',type=str,help='vedio url')
+	parser.add_argument('-d','--hwdec',nargs=1,type=str,help='hardware decode opitions,use "mpv --hwdec=help" \
+to get more information',default=['no'])
+	a=parser.parse_args()
+	main(url=a.url,hwdec=a.hwdec[0])
