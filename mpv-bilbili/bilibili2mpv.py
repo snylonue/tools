@@ -13,15 +13,13 @@ def main(url):
 	else:
 		raise OSError(f'can not get real url of {url} ')
 	assert urls
-	vurls,aurls=[],[]
-	for x,v in enumerate(urls):
-		if x%2==0:
-			vurls.append(v)
-		else:
-			aurls.append(v)
-	#cmd=f'mpv "{''','''.join(vurls)}" --audio-file="{''','''.join(aurls)}" --referrer="https://www.bilibili.com" --no-ytdl --merge-files'
-	cmd=f"""mpv "{','.join(vurls)}" --audio-file="{','.join(aurls)}" --referrer="https://www.bilibili.com" --no-ytdl --merge-files \
-	--dither=fruit"""
+	if len(urls)==2:
+		cmd=f"""mpv "{urls[0]}" --audio-file="{urls[1]}" --referrer="https://www.bilibili.com" --no-ytdl \
+--dither=fruit"""
+	else:
+		cmd=f"""mpv {'"'+'" "'.join(urls)+'"'} --referrer="https://www.bilibili.com" --no-ytdl --merge-files \
+--dither=fruit"""
+	assert cmd
 	subprocess.run(cmd,shell=True)
 
 if __name__ == '__main__':
