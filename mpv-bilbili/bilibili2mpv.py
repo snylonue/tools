@@ -30,4 +30,4 @@ if __name__ == '__main__':
 to get more information')
 	parser.add_argument('-o','--output',action='store_const',default='.exe',const='',help='output mpv info')
 	args=parser.parse_args()
-	main(url=args.url,hwdec=args.hwdec[0],args.output)
+	main(url=args.url,hwdec=args.hwdec[0],output=args.output)
