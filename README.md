@@ -1,7 +1,3 @@
-# tools
-
-一些自用小工具
-
 # mpv-bilibili
 使用mpv播放B站视频  
 **依赖**:[you-get](https://github.com/soimort/you-get),[mpv](https://mpv.io)  
