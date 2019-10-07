@@ -11,6 +11,9 @@ function random_play()
 end
 function random_play_control()
 	random = not random
+	if random then
+		mp.command("playlist-shuffle")
+	end
 	mp.osd_message("Random: " .. (random and "yes" or "no"))
 end
 mp.register_event("start-file", random_play)
