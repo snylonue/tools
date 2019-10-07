@@ -13,5 +13,5 @@ function random_play_control()
 	random = not random
 	mp.osd_message("Random: " .. (random and "yes" or "no"))
 end
-mp.register_event("end-file", random_play)
+mp.register_event("start-file", random_play)
 mp.add_key_binding('y', "random_control", random_play_control)
