@@ -4,10 +4,10 @@
 ```
 usage: b2m.py [-h] [-d HWDEC] [-o] url
 
-play bilibili vedio with mpv
+play bilibili video with mpv
 
 positional arguments:
-  url                   vedio url
+  url                   video url
 
 optional arguments:
   -h, --help            show this help message and exit
