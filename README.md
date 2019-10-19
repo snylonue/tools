@@ -21,9 +21,9 @@ optional arguments:
 **感谢**:[you-get](https://github.com/soimort/you-get),[mpv](https://mpv.io),[@FSpark 's Starry Sky](https://fspark.me/)
 
 # mpv-unlimit-random
-mpv随机播放脚本,使用`y`切换(默认关闭,第17行可修改快捷键)  
+mpv随机播放脚本,使用`y`切换(默认关闭,最后一行可修改快捷键)  
 切换文件时打乱播放列表,保持循环播放  
-**有几率使播放中的文件位于播放列表末尾导致播放停止** (重新切换可恢复,需要修复)  
+**有几率使播放中的文件位于播放列表末尾导致播放停止** (~~重新切换可恢复,需要修复~~ 已修复)  
 **关闭后已经打乱的播放列表无法还原** (未来可能会支持)
 
 
