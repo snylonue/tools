@@ -1,7 +1,3 @@
-local msg = require "mp.msg"
-local utils = require "mp.utils"
-local options = require "mp.options"
-
 local random = false
 
 function random_play()
@@ -10,8 +6,8 @@ function random_play()
 		pos = mp.get_property("playlist-pos-1")
 		mp.command("playlist-shuffle")
 		while (pos == plct) do
-			pos = mp.get_property("playlist-pos-1")
 			mp.command("playlist-shuffle")
+			pos = mp.get_property("playlist-pos-1")
 		end
 	end
 end
