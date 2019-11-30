@@ -19,7 +19,7 @@ pub fn get_url(orig_url: &String) -> Res<Vec<String>> {
     let res: Vec<_> = sto.filter(|x| { x.trim() != "" }).map(|x| { x.trim().to_string() }).collect();
     Ok(res)
 }
-pub fn play_to_mpv(orig_url: &String) -> Res<()> {
+pub fn play_with_mpv(orig_url: &String, sto: Stdio) -> Res<()> {
 	let url = get_url(orig_url)?;
 	let mut cmd = process::Command::new("mpv");
 	if url.len() == 2 {
@@ -27,8 +27,10 @@ pub fn play_to_mpv(orig_url: &String) -> Res<()> {
 	} else {
 		cmd.arg(url.join(",")).arg("--merge-files");
 	}
-	if let Err(_) = cmd.arg("--referrer=\"https://www.bilibili.com\"").arg("--no-ytbl").output() {
-		return Err("Failed to run command")
-	}
+	cmd.arg("--referrer=https://www.bilibili.com")
+	   .arg("--no-ytdl")
+	   .stdout(sto)
+	   .spawn().expect("Failed to spawn child process")
+	   .wait_with_output().expect("Failed to run command");
 	Ok(())
 }
