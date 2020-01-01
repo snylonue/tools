@@ -6,7 +6,7 @@ use b2m::*;
 
 fn main() {
     let matches = App::new("mpv-bilibili")
-                      .version("0.4.0")
+                      .version("0.4.1")
                       .about("play bilibili video with mpv")
                       .arg(Arg::with_name("url")
                         .help("video url")
