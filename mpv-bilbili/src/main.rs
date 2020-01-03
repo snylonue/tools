@@ -26,7 +26,8 @@ fn main() {
     } else {
         Stdio::null()
     };
-    play_with_mpv(&url, sto).unwrap_or_else(|e| {
+    let media_info = get_url(&url).unwrap();
+    play_with_mpv(media_info, sto).unwrap_or_else(|e| {
       eprintln!("{}: {}", "Error", e);
     });
 }
