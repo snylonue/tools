@@ -17,25 +17,28 @@ pub struct MediaInfo {
     pub website: Website,
 }
 
+pub fn parse_output(output: process::Output) -> Res<(String, String)> {
+    let stdout = match String::from_utf8(output.stdout) {
+        Ok(r) => r,
+        Err(e) => return Err(format!("Failed to parse stdout: {:?}", e)),
+    };
+    let stderr = match String::from_utf8(output.stderr) {
+        Ok(r) => r,
+        Err(e) => String::from(format!("Failed to parse stderr: {:?}", e)),
+    };
+    Ok((stdout, stderr))
+}
 pub fn get_url(orig_url: &String) -> Res<(MediaInfo)> {
     let (stdout, stderr) = match process::Command::new("you-get").arg(orig_url).arg("--json").output() {
         Ok(r) => {
-            let stdout = match String::from_utf8(r.stdout) {
-                Ok(r) => r,
-                Err(e) => return Err(format!("{:?}", e)),
-            };
-            let stderr = match String::from_utf8(r.stderr) {
-                Ok(r) => r,
-                Err(e) => String::from(format!("Failed to read stderr: {:?}", e)),
-            };
-            (stdout, stderr)
+            parse_output(r)?
         },
         Err(e) => return Err(format!("{:?}", e)),
     };
     let json_stdout = match serde_json::from_str(&*stdout) {
         Ok(j) => match j {
             Value::Object(o) => o,
-            _ => return Err(format!("Failed to parse stdout as url at top\nstdout: {}\nstderr: {}", stdout, stderr)),
+            _ => return Err(format!("Failed to parse stdout as url\nstdout: {}\nstderr: {}", stdout, stderr)),
         },
         Err(e) => return Err(format!("Failed to deserialize stdout: {:?}", e)),
     };
