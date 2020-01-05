@@ -7,15 +7,21 @@ use std::panic;
 
 type Res<T> = Result<T, String>;
 
+const BILIBILI_DASH: Website = Website::Bilibili(true);
+const BILIBILI: Website = Website::Bilibili(false);
+
 pub enum Website {
     Bilibili(bool),
 }
 
-pub struct MediaInfo {
+pub struct Url {
     pub urls: Vec<String>,
+    pub website: Website,
+}
+pub struct MediaInfo {
+    pub url: Url,
     pub title: String,
     pub referrer: String,
-    pub website: Website,
 }
 
 pub fn parse_output(output: process::Output) -> Res<(String, String)> {
@@ -29,39 +35,48 @@ pub fn parse_output(output: process::Output) -> Res<(String, String)> {
     };
     Ok((stdout, stderr))
 }
-pub fn parse_url(json: &Value) -> Res<(map::Map<String, Value>, bool)> {
-    panic::catch_unwind(|| {
-        match json["streams"]["dash-flv"].clone() {
-            Value::Object(o) => Ok((o, true)),
-            _ => match json["streams"]["flv"].clone() {
-                Value::Object(o) => Ok((o, false)),
-                _ => match json["streams"]["dash-flv720"].clone() {
-                    Value::Object(o) => Ok((o, true)),
-                    _ => match json["streams"]["flv720"].clone() {
-                        Value::Object(o) => Ok((o, false)),
-                        _ => match json["streams"]["dash-flv480"].clone() {
-                            Value::Object(o) => Ok((o, true)),
-                            _ => match json["streams"]["flv480"].clone() {
-                                Value::Object(o) => Ok((o, true)),
-                                _ => match json["streams"]["dash-flv360"].clone() {
-                                    Value::Object(o) => Ok((o, true)),
-                                    _ => match json["streams"]["flv360"].clone() {
-                                        Value::Object(o) => Ok((o, false)),
-                                        _ => Err("No url is found".to_string()),
+pub fn parse_url(json: &Value) -> Res<(map::Map<String, Value>, Website)> {
+    match json["site"].clone() {
+        Value::String(s) => match s.as_str() {
+            "Bilibili" => panic::catch_unwind(|| {
+                match json["streams"]["dash-flv"].clone() {
+                    Value::Object(o) => Ok((o, BILIBILI_DASH)),
+                    _ => match json["streams"]["flv"].clone() {
+                        Value::Object(o) => Ok((o, BILIBILI)),
+                        _ => match json["streams"]["dash-flv720"].clone() {
+                            Value::Object(o) => Ok((o, BILIBILI_DASH)),
+                            _ => match json["streams"]["flv720"].clone() {
+                                Value::Object(o) => Ok((o, BILIBILI)),
+                                _ => match json["streams"]["dash-flv480"].clone() {
+                                    Value::Object(o) => Ok((o, BILIBILI_DASH)),
+                                    _ => match json["streams"]["flv480"].clone() {
+                                        Value::Object(o) => Ok((o, BILIBILI_DASH)),
+                                        _ => match json["streams"]["dash-flv360"].clone() {
+                                            Value::Object(o) => Ok((o, BILIBILI_DASH)),
+                                            _ => match json["streams"]["flv360"].clone() {
+                                                Value::Object(o) => Ok((o, BILIBILI)),
+                                                _ => Err("No url is found".to_string()),
+                                            },
+                                        },
                                     },
                                 },
                             },
                         },
                     },
-                },
-            },
-        }
-    }).unwrap_or_else(|e| {
-        return Err(format!("Failed to parse json as url: {:?}", e));
-    })
+                }
+            }).unwrap_or_else(|e| {
+                return Err(format!("Failed to parse json as url: {:?}", e));
+            }),
+            _ => Err("Unsupport website".to_string()),
+        },
+        _ => Err("Failed to parse website".to_string()),
+    }
 }
 pub fn get_url(orig_url: &String) -> Res<MediaInfo> {
-    let (stdout, stderr) = match process::Command::new("you-get").arg(orig_url).arg("--json").output() {
+    let (stdout, stderr) = match process::Command::new("you-get")
+        .arg(orig_url)
+        .arg("--json")
+        .output() {
         Ok(r) => {
             parse_output(r)?
         },
@@ -71,8 +86,7 @@ pub fn get_url(orig_url: &String) -> Res<MediaInfo> {
         Ok(j) => j,
         Err(e) => return Err(format!("Failed to deserialize stdout: {:?}", e)),
     };
-    let (obj_url, dash) = parse_url(&json_stdout)?;
-    let website = Website::Bilibili(dash);
+    let (obj_url, website) = parse_url(&json_stdout)?;
     let urls = panic::catch_unwind(|| {
         match obj_url["src"].clone() {
             Value::String(s) => Ok(vec![s]),
@@ -92,7 +106,7 @@ pub fn get_url(orig_url: &String) -> Res<MediaInfo> {
         return Err(format!("Failed to parse stdout as url\nerror: {:?}\nstdout: {}\nstderr: {}", e, stdout, stderr));
     })?;
     // referrer = json_output['extra']['referer']
-    let referrer = match json_stdout["extra"].clone() {
+    let referrer = match json_stdout["extra"][].clone() {
         Value::Object(o) => match o["referer"].clone() {
             Value::String(s) => s,
             _ => String::new(),
@@ -104,10 +118,10 @@ pub fn get_url(orig_url: &String) -> Res<MediaInfo> {
         Value::String(s) => s,
         _ => String::new(),
     };
-    Ok(MediaInfo { urls, referrer, title, website })
+    Ok(MediaInfo { url: Url { urls, website }, referrer, title })
 }
 pub fn play_with_mpv(media_info: MediaInfo, sto: Stdio) -> Res<()> {
-    let MediaInfo { urls, title, referrer, website } = media_info;
+    let MediaInfo { url: Url { urls, website }, title, referrer } = media_info;
     let mut cmd = process::Command::new("mpv");
     match website {
         Website::Bilibili(b) => {
@@ -126,7 +140,6 @@ pub fn play_with_mpv(media_info: MediaInfo, sto: Stdio) -> Res<()> {
         .arg("--merge-files")
         .arg("--no-ytdl")
         .stdout(sto)
-        .spawn().expect("Failed to spawn child process")
-        .wait().expect("Failed to run command");
+        .output().expect("Failed to run command");
     Ok(())
 }
