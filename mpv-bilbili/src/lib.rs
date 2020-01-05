@@ -1,5 +1,6 @@
 use serde_json;
 use serde_json::Value;
+use serde_json::map;
 use std::process;
 use std::process::Stdio;
 use std::panic;
@@ -19,7 +20,7 @@ pub struct MediaInfo {
 
 pub fn parse_output(output: process::Output) -> Res<(String, String)> {
     let stdout = match String::from_utf8(output.stdout) {
-        Ok(r) => r,
+        Ok(r) => r.replace("\r", "").replace("\n", "").replace(" ", ""),
         Err(e) => return Err(format!("Failed to parse stdout: {:?}", e)),
     };
     let stderr = match String::from_utf8(output.stderr) {
@@ -28,7 +29,38 @@ pub fn parse_output(output: process::Output) -> Res<(String, String)> {
     };
     Ok((stdout, stderr))
 }
-pub fn get_url(orig_url: &String) -> Res<(MediaInfo)> {
+pub fn parse_url(json: &Value) -> Res<(map::Map<String, Value>, bool)> {
+    panic::catch_unwind(|| {
+        match json["streams"]["dash-flv"].clone() {
+            Value::Object(o) => Ok((o, true)),
+            _ => match json["streams"]["flv"].clone() {
+                Value::Object(o) => Ok((o, false)),
+                _ => match json["streams"]["dash-flv720"].clone() {
+                    Value::Object(o) => Ok((o, true)),
+                    _ => match json["streams"]["flv720"].clone() {
+                        Value::Object(o) => Ok((o, false)),
+                        _ => match json["streams"]["dash-flv480"].clone() {
+                            Value::Object(o) => Ok((o, true)),
+                            _ => match json["streams"]["flv480"].clone() {
+                                Value::Object(o) => Ok((o, true)),
+                                _ => match json["streams"]["dash-flv360"].clone() {
+                                    Value::Object(o) => Ok((o, true)),
+                                    _ => match json["streams"]["flv360"].clone() {
+                                        Value::Object(o) => Ok((o, false)),
+                                        _ => Err("No url is found".to_string()),
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        }
+    }).unwrap_or_else(|e| {
+        return Err(format!("Failed to parse json as url: {:?}", e));
+    })
+}
+pub fn get_url(orig_url: &String) -> Res<MediaInfo> {
     let (stdout, stderr) = match process::Command::new("you-get").arg(orig_url).arg("--json").output() {
         Ok(r) => {
             parse_output(r)?
@@ -36,20 +68,13 @@ pub fn get_url(orig_url: &String) -> Res<(MediaInfo)> {
         Err(e) => return Err(format!("{:?}", e)),
     };
     let json_stdout = match serde_json::from_str(&*stdout) {
-        Ok(j) => match j {
-            Value::Object(o) => o,
-            _ => return Err(format!("Failed to parse stdout as url\nstdout: {}\nstderr: {}", stdout, stderr)),
-        },
+        Ok(j) => j,
         Err(e) => return Err(format!("Failed to deserialize stdout: {:?}", e)),
     };
-    let website = Website::Bilibili(true);
-    let urls =  panic::catch_unwind(|| {
-        Ok(json_stdout["streams"]["dash-flv"].clone())
-    }).unwrap_or_else(|e| {
-        return Err(format!("Failed to parse stdout as url\nerror: {:?}\nstdout: {}\nstderr: {}", e, stdout, stderr));
-    })?;
+    let (obj_url, dash) = parse_url(&json_stdout)?;
+    let website = Website::Bilibili(dash);
     let urls = panic::catch_unwind(|| {
-        match urls["src"].clone() {
+        match obj_url["src"].clone() {
             Value::String(s) => Ok(vec![s]),
             Value::Array(a) => Ok(a.iter().map(|v| {
                 match v {   
@@ -61,7 +86,7 @@ pub fn get_url(orig_url: &String) -> Res<(MediaInfo)> {
                     _ => String::new(),
                 }
             }).collect()),
-            _ => Err(format!("No url is found\nstdout: {}\nstderr: {}", stdout, stderr))
+            _ => Err(format!(r#"No url is found, stdout: {}, stderr: {}"#, stdout, stderr))
         }
     }).unwrap_or_else(|e| {
         return Err(format!("Failed to parse stdout as url\nerror: {:?}\nstdout: {}\nstderr: {}", e, stdout, stderr));

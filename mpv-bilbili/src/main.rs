@@ -6,7 +6,7 @@ use b2m::*;
 
 fn main() {
     let matches = App::new("mpv-bilibili")
-                      .version("0.4.1")
+                      .version("0.4.4")
                       .about("play bilibili video with mpv")
                       .arg(Arg::with_name("url")
                         .help("video url")
@@ -27,7 +27,5 @@ fn main() {
         Stdio::null()
     };
     let media_info = get_url(&url).unwrap();
-    play_with_mpv(media_info, sto).unwrap_or_else(|e| {
-      eprintln!("{}: {}", "Error", e);
-    });
+    play_with_mpv(media_info, sto).unwrap();
 }
