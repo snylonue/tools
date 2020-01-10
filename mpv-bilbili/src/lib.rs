@@ -15,8 +15,8 @@ pub enum Website {
 }
 
 pub struct Url {
-    pub urls: Vec<String>,
-    pub website: Website,
+    pub videos: Vec<String>,
+    pub audios: Vec<String>,
 }
 pub struct MediaInfo {
     pub url: Url,
@@ -35,41 +35,52 @@ pub fn parse_output(output: process::Output) -> Res<(String, String)> {
     };
     Ok((stdout, stderr))
 }
-pub fn parse_url(json: &Value) -> Res<(map::Map<String, Value>, Website)> {
-    match json["site"].clone() {
-        Value::String(s) => match s.as_str() {
-            "Bilibili" => panic::catch_unwind(|| {
-                match json["streams"]["dash-flv"].clone() {
-                    Value::Object(o) => Ok((o, BILIBILI_DASH)),
-                    _ => match json["streams"]["flv"].clone() {
-                        Value::Object(o) => Ok((o, BILIBILI)),
-                        _ => match json["streams"]["dash-flv720"].clone() {
-                            Value::Object(o) => Ok((o, BILIBILI_DASH)),
-                            _ => match json["streams"]["flv720"].clone() {
-                                Value::Object(o) => Ok((o, BILIBILI)),
-                                _ => match json["streams"]["dash-flv480"].clone() {
-                                    Value::Object(o) => Ok((o, BILIBILI_DASH)),
-                                    _ => match json["streams"]["flv480"].clone() {
-                                        Value::Object(o) => Ok((o, BILIBILI_DASH)),
-                                        _ => match json["streams"]["dash-flv360"].clone() {
-                                            Value::Object(o) => Ok((o, BILIBILI_DASH)),
-                                            _ => match json["streams"]["flv360"].clone() {
-                                                Value::Object(o) => Ok((o, BILIBILI)),
-                                                _ => Err("No url is found".to_string()),
-                                            },
-                                        },
-                                    },
+pub fn parse_url(json: &Value) -> Option<(Vec<String>, Vec<String>)> {
+    match json["site"].as_str()? {
+        "Bilibili" => {
+            //json['streams'] is ordered with BTreeMap
+            match json["streams"].clone() {
+                Value::Object(o) => {
+                    let displays = ["dash-flv", "dash-flv360", "dash-flv480", "dash-flv720", "flv", "flv360", "flv480", "flv720"];
+                    let (dp, stream) = {
+                        let mut res = None;
+                        for i in displays.iter() {
+                            match o.iter().find(|x| { x.0 == i }) {
+                                Some(el) => {
+                                    res = Some(el);
+                                    break;
                                 },
-                            },
-                        },
-                    },
-                }
-            }).unwrap_or_else(|e| {
-                return Err(format!("Failed to parse json as url: {:?}", e));
-            }),
-            _ => Err("Unsupport website".to_string()),
+                                None => continue,
+                            }
+                        }
+                        match res {
+                            Some(el) => el,
+                            None => o.iter().next()?
+                        }
+                    };
+                    if dp.matches("dash").next().is_none() {
+                        let video_url = stream["src"]
+                            .as_array()?
+                            .iter()
+                            .map(|x| {
+                                match x.as_str() {
+                                    Some(s) => String::from(s),
+                                    None => String::new(),
+                                }
+                            })
+                            .collect();
+                        Some((video_url, vec![]))
+                    } else {
+                        let dash_url = stream["src"].as_array()?;
+                        let video_url = vec![String::from(dash_url[0][0].as_str()?)];
+                        let audio_url = vec![String::from(dash_url[1][0].as_str()?)];
+                        Some((video_url, audio_url))
+                    }
+                },
+                _ => None,
+            }
         },
-        _ => Err("Failed to parse website".to_string()),
+        _ => None,
     }
 }
 pub fn get_url(orig_url: &String) -> Res<MediaInfo> {
@@ -86,27 +97,12 @@ pub fn get_url(orig_url: &String) -> Res<MediaInfo> {
         Ok(j) => j,
         Err(e) => return Err(format!("Failed to deserialize stdout: {:?}", e)),
     };
-    let (obj_url, website) = parse_url(&json_stdout)?;
-    let urls = panic::catch_unwind(|| {
-        match obj_url["src"].clone() {
-            Value::String(s) => Ok(vec![s]),
-            Value::Array(a) => Ok(a.iter().map(|v| {
-                match v {   
-                    Value::String(s) => s.clone(),
-                    Value::Array(a) => match a[0].clone() {
-                        Value::String(s) => s,
-                        _ => String::new(),
-                    },
-                    _ => String::new(),
-                }
-            }).collect()),
-            _ => Err(format!(r#"No url is found, stdout: {}, stderr: {}"#, stdout, stderr))
-        }
-    }).unwrap_or_else(|e| {
-        return Err(format!("Failed to parse stdout as url\nerror: {:?}\nstdout: {}\nstderr: {}", e, stdout, stderr));
-    })?;
+    let (videos, audios) = match parse_url(&json_stdout) {
+        Some(el) => el,
+        None => return Err("Failed to parse stdout as url".to_string()),
+    };
     // referrer = json_output['extra']['referer']
-    let referrer = match json_stdout["extra"][].clone() {
+    let referrer = match json_stdout["extra"].clone() {
         Value::Object(o) => match o["referer"].clone() {
             Value::String(s) => s,
             _ => String::new(),
@@ -118,23 +114,17 @@ pub fn get_url(orig_url: &String) -> Res<MediaInfo> {
         Value::String(s) => s,
         _ => String::new(),
     };
-    Ok(MediaInfo { url: Url { urls, website }, referrer, title })
+    Ok(MediaInfo { url: Url { videos, audios }, referrer, title })
 }
 pub fn play_with_mpv(media_info: MediaInfo, sto: Stdio) -> Res<()> {
-    let MediaInfo { url: Url { urls, website }, title, referrer } = media_info;
+    let MediaInfo { url: Url { videos, audios }, title, referrer } = media_info;
     let mut cmd = process::Command::new("mpv");
-    match website {
-        Website::Bilibili(b) => {
-            if b {
-                cmd.arg(urls[0].clone())
-                    .arg(format!("--audio-file={}", urls[1]));
-            } else {
-                for i in urls.iter() {
-                    cmd.arg(i);
-                }
-            }
-        },
-    };
+    for i in videos {
+        cmd.arg(i);
+    }
+    for i in audios {
+        cmd.arg(format!("--audio-file={}", i));
+    }
     cmd.arg(format!("--referrer={}", referrer))
         .arg(format!("--title={}", title))
         .arg("--merge-files")
