@@ -1,18 +1,10 @@
 use serde_json;
 use serde_json::Value;
-use serde_json::map;
 use std::process;
 use std::process::Stdio;
 use std::panic;
 
 type Res<T> = Result<T, String>;
-
-const BILIBILI_DASH: Website = Website::Bilibili(true);
-const BILIBILI: Website = Website::Bilibili(false);
-
-pub enum Website {
-    Bilibili(bool),
-}
 
 pub struct Url {
     pub videos: Vec<String>,
@@ -26,7 +18,7 @@ pub struct MediaInfo {
 
 pub fn parse_output(output: process::Output) -> Res<(String, String)> {
     let stdout = match String::from_utf8(output.stdout) {
-        Ok(r) => r.replace("\r", "").replace("\n", "").replace(" ", ""),
+        Ok(r) => r,
         Err(e) => return Err(format!("Failed to parse stdout: {:?}", e)),
     };
     let stderr = match String::from_utf8(output.stderr) {
@@ -84,7 +76,7 @@ pub fn parse_url(json: &Value) -> Option<(Vec<String>, Vec<String>)> {
     }
 }
 pub fn get_url(orig_url: &String) -> Res<MediaInfo> {
-    let (stdout, stderr) = match process::Command::new("you-get")
+    let (stdout, _stderr) = match process::Command::new("you-get")
         .arg(orig_url)
         .arg("--json")
         .output() {
@@ -102,13 +94,12 @@ pub fn get_url(orig_url: &String) -> Res<MediaInfo> {
         None => return Err("Failed to parse stdout as url".to_string()),
     };
     // referrer = json_output['extra']['referer']
-    let referrer = match json_stdout["extra"].clone() {
-        Value::Object(o) => match o["referer"].clone() {
+    let referrer = panic::catch_unwind(|| {
+        match json_stdout["extra"]["referer"].clone() {
             Value::String(s) => s,
             _ => String::new(),
-        },
-        _ => String::new(),
-    };
+        }
+    }).unwrap_or(String::new());
     // title = json_output['title']
     let title = match json_stdout["title"].clone() {
         Value::String(s) => s,
