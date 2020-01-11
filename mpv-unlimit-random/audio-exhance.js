@@ -2,7 +2,6 @@
 
 var audio_exhance = {
 	random : false,
-	loop : false,
 	pasue : false,
 };
 
@@ -25,10 +24,6 @@ function pasue_on_finish() {
 function random_play_control() {
 	audio_exhance.random = !audio_exhance.random;
 	mp.osd_message('Random: ' + (audio_exhance.random ? 'yes' : 'no'));
-}
-function loop_list_control() {
-	audio_exhance.loop = !audio_exhance.loop;
-	mp.osd_message('Loop list: ' + (audio_exhance.loop ? 'yes' + (audio_exhance.random ? '(but will not work with random)' : '') : 'no'));
 }
 function pause_on_finish_control() {
 	audio_exhance.pasue = !audio_exhance.pasue;
