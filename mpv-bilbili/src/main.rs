@@ -4,18 +4,24 @@ use std::process::Stdio;
 
 use b2m::*;
 
+const NAME: &str = "mpv-bilibili";
+const VERSION: &str = "0.6.1";
+const DESCRIPTION: &str = "play bilibili video with mpv";
+
 fn main() {
-    let matches = App::new("mpv-bilibili")
-                      .version("0.6.1")
-                      .about("play bilibili video with mpv")
+    let matches = App::new(NAME)
+                      .version(VERSION)
+                      .about(DESCRIPTION)
                       .arg(Arg::with_name("url")
-                        .help("video url")
-                        .index(1)
-                        .required(true))
+                          .help("video url")
+                          .index(1)
+                          .required(true)
+                      )
                       .arg(Arg::with_name("debug")
-                        .help("run with stdout from mpv (may not work)")
-                        .long("debug")
-                        .multiple(true))
+                          .help("run with stdout from mpv (may not work)")
+                          .long("debug")
+                          .multiple(true)
+                      )
                       .get_matches();
     let url = match matches.value_of("url") {
         Some(url) => String::from(url),

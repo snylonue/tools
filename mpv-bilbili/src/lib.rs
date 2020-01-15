@@ -107,7 +107,7 @@ pub fn get_url(orig_url: &String) -> Res<MediaInfo> {
     };
     Ok(MediaInfo { url: Url { videos, audios }, referrer, title })
 }
-pub fn play_with_mpv(media_info: MediaInfo, sto: Stdio) -> Res<()> {
+pub fn play_with_mpv(media_info: MediaInfo, stdio: Stdio) -> Res<()> {
     let MediaInfo { url: Url { videos, audios }, title, referrer } = media_info;
     let mut cmd = process::Command::new("mpv");
     for i in videos {
@@ -120,7 +120,7 @@ pub fn play_with_mpv(media_info: MediaInfo, sto: Stdio) -> Res<()> {
         .arg(format!("--title={}", title))
         .arg("--merge-files")
         .arg("--no-ytdl")
-        .stdout(sto)
+        .stdout(stdio)
         .output().expect("Failed to run command");
     Ok(())
 }
