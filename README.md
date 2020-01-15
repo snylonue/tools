@@ -7,10 +7,10 @@ you-get本身支持调用播放器播放，但不完善
 git clone https://github.com/snylonue/tools
 cd tools/mpv-bilbili
 cargo build --release
-target/release/b2m.exe -h
 ```
+编译好的文件位于`target/release/b2m.exe`
 
-如果无法编译rust程序，可以使用[Python版(不再维护)](mpv-bilibili/bilibili2mpv.py)
+如果无法编译rust程序，可以使用[Python版(不再维护)](mpv-bilbili/bilibili2mpv.py)
 
 ### 用法
 ```
@@ -30,8 +30,8 @@ ARGS:
 
 ```
 
-**依赖**:[you-get](https://github.com/soimort/you-get), [mpv](https://mpv.io)  
-**思路**:[Linux下用mpv在B站看番（二）：you-get](https://fspark.me/archives/Linux-mpv-bilibili-bangumi-you-get.html)  
+**依赖**: [you-get](https://github.com/soimort/you-get), [mpv](https://mpv.io)  
+**思路**: [Linux下用mpv在B站看番（二）：you-get](https://fspark.me/archives/Linux-mpv-bilibili-bangumi-you-get.html)  
 
 # mpv-unlimit-random
 mpv随机播放脚本,使用`y`切换(默认关闭,最后一行可修改快捷键)  
