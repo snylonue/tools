@@ -2,16 +2,17 @@ pub mod check;
 
 use clap::Arg;
 use clap::App;
+use failure::Error;
 use std::process;
 use std::process::Stdio;
 
 use b2m::*;
 
 const NAME: &str = "mpv-bilibili";
-const VERSION: &str = "0.7.1";
+const VERSION: &str = "0.7.2";
 const DESCRIPTION: &str = "play bilibili video with mpv";
 
-fn main() {
+fn main() -> Result<(), Error> {
     let matches = App::new(NAME)
                       .version(VERSION)
                       .about(DESCRIPTION)
@@ -55,5 +56,5 @@ fn main() {
     } else {
         Stdio::null()
     };
-    get_url(&url).unwrap().play(stdio).unwrap();
+    get_url(&url)?.play(stdio)
 }
