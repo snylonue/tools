@@ -16,6 +16,26 @@ pub struct MediaInfo {
     pub referrer: String,
 }
 
+impl MediaInfo {
+    pub fn play(&self, stdio: Stdio) -> Res<()> {
+        let Url { videos, audios } = &self.url;
+        let mut cmd = process::Command::new("mpv");
+        for i in videos.iter() {
+            cmd.arg(i);
+        }
+        for i in audios.iter() {
+            cmd.arg(format!("--audio-file={}", i));
+        }
+        cmd.arg(format!("--referrer={}", self.referrer))
+            .arg(format!("--title={}", self.title))
+            .arg("--merge-files")
+            .arg("--no-ytdl")
+            .stdout(stdio)
+            .output().expect("Failed to run command");
+        Ok(())
+    }
+}
+
 pub fn parse_output(output: process::Output) -> Res<(String, String)> {
     let stdout = match String::from_utf8(output.stdout) {
         Ok(r) => r,
@@ -106,21 +126,4 @@ pub fn get_url(orig_url: &String) -> Res<MediaInfo> {
         _ => String::new(),
     };
     Ok(MediaInfo { url: Url { videos, audios }, referrer, title })
-}
-pub fn play_with_mpv(media_info: MediaInfo, stdio: Stdio) -> Res<()> {
-    let MediaInfo { url: Url { videos, audios }, title, referrer } = media_info;
-    let mut cmd = process::Command::new("mpv");
-    for i in videos {
-        cmd.arg(i);
-    }
-    for i in audios {
-        cmd.arg(format!("--audio-file={}", i));
-    }
-    cmd.arg(format!("--referrer={}", referrer))
-        .arg(format!("--title={}", title))
-        .arg("--merge-files")
-        .arg("--no-ytdl")
-        .stdout(stdio)
-        .output().expect("Failed to run command");
-    Ok(())
 }

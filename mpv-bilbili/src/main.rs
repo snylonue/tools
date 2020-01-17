@@ -8,7 +8,7 @@ use std::process::Stdio;
 use b2m::*;
 
 const NAME: &str = "mpv-bilibili";
-const VERSION: &str = "0.6.2";
+const VERSION: &str = "0.7.0";
 const DESCRIPTION: &str = "play bilibili video with mpv";
 
 fn main() {
@@ -50,11 +50,10 @@ fn main() {
         Some(url) => String::from(url),
         None => panic!("Invaild input"),
     };
-    let sto = if matches.is_present("debug") {
+    let stdio = if matches.is_present("debug") {
         Stdio::inherit()
     } else {
         Stdio::null()
     };
-    let media_info = get_url(&url).unwrap();
-    play_with_mpv(media_info, sto).unwrap();
+    get_url(&url).unwrap().play(stdio).unwrap();
 }
