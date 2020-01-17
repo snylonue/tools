@@ -20,10 +20,10 @@ impl MediaInfo {
     pub fn play(&self, stdio: Stdio) -> Res<()> {
         let Url { videos, audios } = &self.url;
         let mut cmd = process::Command::new("mpv");
-        for i in videos.iter() {
+        for i in videos {
             cmd.arg(i);
         }
-        for i in audios.iter() {
+        for i in audios {
             cmd.arg(format!("--audio-file={}", i));
         }
         cmd.arg(format!("--referrer={}", self.referrer))
@@ -51,8 +51,8 @@ pub fn parse_url(json: &Value) -> Option<(Vec<String>, Vec<String>)> {
     match json["site"].as_str()? {
         "Bilibili" => {
             //json['streams'] is ordered with BTreeMap
-            match json["streams"].clone() {
-                Value::Object(o) => {
+            match json["streams"] {
+                Value::Object(ref o) => {
                     let displays = ["dash-flv", "dash-flv360", "dash-flv480", "dash-flv720", "flv", "flv360", "flv480", "flv720"];
                     let (dp, stream) = {
                         let mut res = None;
@@ -115,14 +115,14 @@ pub fn get_url(orig_url: &String) -> Res<MediaInfo> {
     };
     // referrer = json_output['extra']['referer']
     let referrer = panic::catch_unwind(|| {
-        match json_stdout["extra"]["referer"].clone() {
-            Value::String(s) => s,
+        match json_stdout["extra"]["referer"] {
+            Value::String(ref s) => s.clone(),
             _ => String::new(),
         }
     }).unwrap_or(String::new());
     // title = json_output['title']
-    let title = match json_stdout["title"].clone() {
-        Value::String(s) => s,
+    let title = match json_stdout["title"] {
+        Value::String(ref s) => s.clone(),
         _ => String::new(),
     };
     Ok(MediaInfo { url: Url { videos, audios }, referrer, title })
