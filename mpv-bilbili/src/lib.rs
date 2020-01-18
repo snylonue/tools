@@ -88,6 +88,16 @@ fn parse_url(value: &Value) -> Option<Url> {
                 Some(Url::new(video_url, audio_url))
             }
         },
+        "爱奇艺 (Iqiyi)" => {
+            let displays = ["TD_H265", "TD", "HD_H265", "HD", "SD", "LD"];
+            let (_, stream) = search_displays(&value["streams"], &displays)?;
+            let video_url = stream["src"]
+                .as_array()?
+                .iter()
+                .map(|x| { String::from(x.as_str().unwrap_or("")) })
+                .collect();
+            Some(Url::new(video_url, vec![]))
+        },
         _ => None,
     }
 }
