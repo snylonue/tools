@@ -9,30 +9,37 @@ use std::process::Stdio;
 use b2m::*;
 
 const NAME: &str = "mpv-bilibili";
-const VERSION: &str = "0.9.0";
+const VERSION: &str = "0.9.1";
 const DESCRIPTION: &str = "play bilibili video with mpv";
 
 fn main() -> Result<(), Error> {
     let matches = App::new(NAME)
-                      .version(VERSION)
-                      .about(DESCRIPTION)
-                      .arg(Arg::with_name("url")
-                          .help("video url")
-                          .index(1)
-                          .required_unless("check")
-                      )
-                      .arg(Arg::with_name("debug")
-                          .help("run with stdout from mpv (may not work)")
-                          .long("debug")
-                          .multiple(true)
-                      )
-                      .arg(Arg::with_name("check")
-                          .help("check if all dependencies are installed")
-                          .short("c")
-                          .long("check")
-                          .multiple(true)
-                    )
-                    .get_matches();
+        .version(VERSION)
+        .about(DESCRIPTION)
+        .arg(Arg::with_name("url")
+            .help("video url")
+            .index(1)
+            .required_unless("check")
+    )
+        .arg(Arg::with_name("check")
+            .help("check if all dependencies are installed")
+            .short("c")
+            .long("check")
+            .multiple(true)
+    )
+        .arg(Arg::with_name("no-video")
+            .help("play without video output (exit if there is no audio)")
+            .long("no-video")
+            .multiple(true)
+            .conflicts_with("no-audio")
+    )
+        .arg(Arg::with_name("no-audio")
+            .help("play without audio output (exit if there is no video)")
+            .long("no-audio")
+            .multiple(true)
+            .conflicts_with("no-video")
+    )
+        .get_matches();
     if matches.is_present("check") {
         if check::check_you_get() {
             println!("\nyou-get checking succeeded");
@@ -51,10 +58,7 @@ fn main() -> Result<(), Error> {
         Some(url) => String::from(url),
         None => panic!("Invaild input"),
     };
-    let stdio = if matches.is_present("debug") {
-        Stdio::inherit()
-    } else {
-        Stdio::null()
-    };
-    get_url(&url)?.play(stdio)
+    let vo = !matches.is_present("no-video");
+    let ao = !matches.is_present("no-audio");
+    get_url(&url)?.play(vo, ao)
 }

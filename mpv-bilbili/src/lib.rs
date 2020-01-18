@@ -24,14 +24,22 @@ impl Url {
     }
 }
 impl MediaInfo {
-    pub fn play(&self, stdio: Stdio) -> Res<()> {
+    pub fn play(&self, vo: bool, ao: bool) -> Res<()> {
         let Url { videos, audios } = &self.url;
         let mut cmd = process::Command::new("mpv");
-        for i in videos {
-            cmd.arg(i);
-        }
-        for i in audios {
-            cmd.arg(format!("--audio-file={}", i));
+        if vo {
+            for i in videos {
+                cmd.arg(i);
+            }
+            if ao {
+                for i in audios {
+                    cmd.arg(format!("--audio-file={}", i));
+                }
+            }
+        } else {
+            for i in audios {
+                cmd.arg(i);
+            }
         }
         if let Some(referrer) = &self.referrer {
             cmd.arg(format!("--referrer={}", referrer));
@@ -41,7 +49,6 @@ impl MediaInfo {
         }
         cmd.arg("--merge-files")
             .arg("--no-ytdl")
-            .stdout(stdio)
             .output()?;
         Ok(())
     }
