@@ -22,28 +22,6 @@ impl Url {
     pub fn new(videos: Vec<String>, audios: Vec<String>) -> Self {
         Url { videos, audios }
     }
-    pub fn from_value(value: &Value, site: &str, displays: &[&str]) -> Option<Self> {
-        match site {
-            "Bilibili" => {
-                //json['streams'] is ordered with BTreeMap
-                let (dp, stream) = search_displays(&value["streams"], &displays)?;
-                if dp.matches("dash").next().is_none() {
-                    let video_url = stream["src"]
-                        .as_array()?
-                        .iter()
-                        .map(|x| { String::from(x.as_str().unwrap_or("")) })
-                        .collect();
-                    Some(Self::new(video_url, vec![]))
-                } else {
-                    let dash_url = stream["src"].as_array()?;
-                    let video_url = vec![String::from(dash_url[0][0].as_str()?)];
-                    let audio_url = vec![String::from(dash_url[1][0].as_str()?)];
-                    Some(Self::new(video_url, audio_url))
-                }
-            },
-            _ => None,
-        }
-    }
 }
 impl MediaInfo {
     pub fn play(&self, stdio: Stdio) -> Res<()> {
@@ -90,13 +68,27 @@ fn search_displays<'a>(object: &'a Value, displays: &[&str]) -> Option<(&'a Stri
 pub fn parse_output(output: process::Output) -> Res<(String, String)> {
     Ok((String::from_utf8(output.stdout)?, String::from_utf8(output.stderr)?))
 }
-fn parse_url(json: &Value) -> Option<Url> {
-    match json["site"].as_str()? {
+fn parse_url(value: &Value) -> Option<Url> {
+    match value["site"].as_str()? {
         "Bilibili" => {
             let displays = ["dash-flv", "dash-flv360", "dash-flv480", "dash-flv720", "flv", "flv360", "flv480", "flv720"];
-            Url::from_value(json, "Bilibili", &displays)
-        }
-        _ => Url::from_value(json, "", &[]),
+            //json['streams'] is ordered with BTreeMap
+            let (dp, stream) = search_displays(&value["streams"], &displays)?;
+            if dp.matches("dash").next().is_none() {
+                let video_url = stream["src"]
+                    .as_array()?
+                    .iter()
+                    .map(|x| { String::from(x.as_str().unwrap_or("")) })
+                    .collect();
+                Some(Url::new(video_url, vec![]))
+            } else {
+                let dash_url = stream["src"].as_array()?;
+                let video_url = vec![String::from(dash_url[0][0].as_str()?)];
+                let audio_url = vec![String::from(dash_url[1][0].as_str()?)];
+                Some(Url::new(video_url, audio_url))
+            }
+        },
+        _ => None,
     }
 }
 pub fn get_url(orig_url: &String) -> Res<MediaInfo> {
