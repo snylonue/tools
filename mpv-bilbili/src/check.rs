@@ -2,6 +2,8 @@ use std::process;
 
 use b2m::parse_output;
 
+const UNKNOWN: &str = "unknown";
+
 pub fn check_you_get() -> bool {
     println!("Checking for you-get");
     println!("Running you-get -V");
@@ -16,6 +18,9 @@ pub fn check_you_get() -> bool {
                         return false;
                     },
                 };
+                let splits = stderr.split(' ').collect::<Vec<_>>();
+                let version = splits.get(2).unwrap_or(&UNKNOWN);
+                println!("you-get version: {}\n", version);
                 println!("{}", format!("Stdout:\n{}", stdout).trim());
                 println!("{}", format!("Stderr:\n{}", stderr).trim());
                 true
@@ -40,6 +45,9 @@ pub fn check_mpv() -> bool {
                         return false;
                     },
                 };
+                let splits = stdout.split(' ').collect::<Vec<_>>();
+                let version = splits.get(1).unwrap_or(&UNKNOWN);
+                println!("mpv version: {}\n", version);
                 println!("{}", format!("Stdout:\n{}", stdout).trim());
                 println!("{}", format!("Stderr:\n{}", stderr).trim());
                 true
