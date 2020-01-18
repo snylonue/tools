@@ -9,7 +9,7 @@ use std::process::Stdio;
 use b2m::*;
 
 const NAME: &str = "mpv-bilibili";
-const VERSION: &str = "0.7.3";
+const VERSION: &str = "0.8.0";
 const DESCRIPTION: &str = "play bilibili video with mpv";
 
 fn main() -> Result<(), Error> {
