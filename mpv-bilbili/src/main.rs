@@ -35,15 +35,15 @@ fn main() -> Result<(), Error> {
                     .get_matches();
     if matches.is_present("check") {
         if check::check_you_get() {
-            println!("you-get checking succeeded");
+            println!("\nyou-get checking succeeded");
         } else {
-            println!("you-get checking failed");
+            println!("\nyou-get checking failed");
         }
         println!();
         if check::check_mpv() {
-          println!("mpv checking succeeded");
+          println!("\nmpv checking succeeded");
         } else {
-          println!("mpv checking failed");
+          println!("\nmpv checking failed");
         }
         process::exit(0);
     }
