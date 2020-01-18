@@ -4,7 +4,6 @@ use clap::Arg;
 use clap::App;
 use failure::Error;
 use std::process;
-use std::process::Stdio;
 
 use b2m::*;
 

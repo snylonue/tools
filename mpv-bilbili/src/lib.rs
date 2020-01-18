@@ -3,7 +3,6 @@ use serde_json::Value;
 use failure::err_msg;
 use failure::Error;
 use std::process;
-use std::process::Stdio;
 use std::panic;
 
 type Res<T> = Result<T, Error>;
@@ -27,7 +26,7 @@ impl MediaInfo {
     pub fn play(&self, vo: bool, ao: bool) -> Res<()> {
         let Url { videos, audios } = &self.url;
         let mut cmd = process::Command::new("mpv");
-        if vo {
+        if vo && videos.len() > 0 {
             for i in videos {
                 cmd.arg(i);
             }
@@ -36,10 +35,12 @@ impl MediaInfo {
                     cmd.arg(format!("--audio-file={}", i));
                 }
             }
-        } else {
+        } else if ao && audios.len() > 0 {
             for i in audios {
                 cmd.arg(i);
             }
+        } else {
+            return Err(err_msg("No urls to play"))
         }
         if let Some(referrer) = &self.referrer {
             cmd.arg(format!("--referrer={}", referrer));
