@@ -40,7 +40,10 @@ impl MediaInfo {
                 cmd.arg(i);
             }
         } else {
-            return Err(err_msg("No urls to play"))
+            return Err(err_msg(format!("No urls to play, no-video: {}, no-audio: {}",
+                if vo { "no" } else { "yes" },
+                if ao { "no" } else { "yes" }
+            )))
         }
         if let Some(referrer) = &self.referrer {
             cmd.arg(format!("--referrer={}", referrer));
