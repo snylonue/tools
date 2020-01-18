@@ -46,7 +46,7 @@ pub fn check_mpv() -> bool {
                     },
                 };
                 let splits = stdout.split(' ').collect::<Vec<_>>();
-                let version = splits.get(1).unwrap_or(&UNKNOWN);
+                let version = splits.get(1).unwrap_or(&UNKNOWN).trim_end_matches(',');
                 println!("mpv version: {}\n", version);
                 println!("{}", format!("Stdout:\n{}", stdout).trim());
                 println!("{}", format!("Stderr:\n{}", stderr).trim());
