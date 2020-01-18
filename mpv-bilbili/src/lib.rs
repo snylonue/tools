@@ -31,12 +31,7 @@ impl Url {
                     let video_url = stream["src"]
                         .as_array()?
                         .iter()
-                        .map(|x| {
-                            match x.as_str() {
-                                Some(s) => String::from(s),
-                                None => String::new(),
-                            }
-                        })
+                        .map(|x| { String::from(x.as_str().unwrap_or("")) })
                         .collect();
                     Some(Self::new(video_url, vec![]))
                 } else {
@@ -78,7 +73,7 @@ fn search_displays<'a>(object: &'a Value, displays: &[&str]) -> Option<(&'a Stri
     let object = object.as_object()?;
     let mut res = None;
     for i in displays.iter() {
-        match object.iter().find(|x| { x.0 == i }) {
+        match object.iter().find(|(x, _)| { x == i }) {
             Some(el) => {
                 res = Some(el);
                 break;
@@ -87,7 +82,7 @@ fn search_displays<'a>(object: &'a Value, displays: &[&str]) -> Option<(&'a Stri
         }
     }
     match res {
-        Some(el) => Some(el),
+        Some(_) => res,
         None => Some(object.iter().next()?)
     }
 }
@@ -95,7 +90,7 @@ fn search_displays<'a>(object: &'a Value, displays: &[&str]) -> Option<(&'a Stri
 pub fn parse_output(output: process::Output) -> Res<(String, String)> {
     Ok((String::from_utf8(output.stdout)?, String::from_utf8(output.stderr)?))
 }
-pub fn parse_url(json: &Value) -> Option<Url> {
+fn parse_url(json: &Value) -> Option<Url> {
     match json["site"].as_str()? {
         "Bilibili" => {
             let displays = ["dash-flv", "dash-flv360", "dash-flv480", "dash-flv720", "flv", "flv360", "flv480", "flv720"];
@@ -125,8 +120,8 @@ pub fn get_url(orig_url: &String) -> Res<MediaInfo> {
         }
     }).unwrap_or(None);
     // title = json_output['title']
-    let title = match json_stdout["title"] {
-        Value::String(ref s) => Some(s.clone()),
+    let title = match json_stdout["title"].as_str() {
+        Some(s) => Some(s.to_string()),
         _ => None,
     };
     Ok(MediaInfo { url, referrer, title })
