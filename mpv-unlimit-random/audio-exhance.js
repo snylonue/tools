@@ -1,36 +1,46 @@
 'use_strict';
 
-var random = false;
-var pasue = false;
+var random = {
+	is_enabled: false,
+	random: function() {
+		if (this.is_enabled) {
+			do {
+				shuffle();
+			} while (is_end_of_playlist());
+			mp.msg.info("Playlist shuffled")
+		}
+	},
+	set_is_enabled: function(val) {
+		this.is_enabled = val;
+		mp.osd_message('Random: ' + (this.is_enabled ? 'yes' : 'no'));
+	},
+}
+var pause_current_file = {
+	is_enabled: false,
+	pause_current_file: function(event) {
+		if (this.is_enabled && event.reason === 'eof') {
+			mp.command('cycle pause');
+		}
+	},
+	set_is_enabled: function(val) {
+		this.is_enabled = val;
+		mp.osd_message('Pause current file: ' + (this.is_enabled ? 'yes' : 'no'));
+	},
+}
 
 function shuffle() {
 	mp.command('playlist-shuffle');
 }
-function is_end() {
+function is_end_of_playlist() {
 	return mp.get_property_number('playlist-pos-1') === mp.get_property_number('playlist-count');
 }
-function random_play() {
-	if (random) {
-		do {
-			shuffle();
-		} while (is_end());
-	}
-}
-function pasue_current_file(event) {
-	if (pasue) {
-		mp.command('cycle pause');
-	}
-}
-function random_play_control() {
-	random = !random;
-	mp.osd_message('Random: ' + (random ? 'yes' : 'no'));
-}
-function pasue_current_file_control() {
-	pasue = !pasue;
-	mp.osd_message(pasue ? 'Pause current file' : 'Unpause current file');
+function toggle(obj) {
+	return function() {
+		obj.set_is_enabled(!obj.is_enabled);
+	};
 }
 
-mp.register_event('start-file', random_play);
-mp.register_event('end-file', pasue_current_file);
-mp.add_key_binding('r', 'random_control', random_play_control);
-mp.add_key_binding('p', 'pause_on_finish_control', pasue_current_file_control);
+mp.register_event('start-file', random.random);
+mp.register_event('end-file', pause_current_file.pause_current_file);
+mp.add_key_binding('y', 'random_control', toggle(random));
+mp.add_key_binding('p', 'pause_on_finish_control', toggle(pause_current_file));
