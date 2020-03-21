@@ -40,7 +40,7 @@ function toggle(obj) {
 	};
 }
 
-mp.register_event('start-file', random.random);
-mp.register_event('end-file', pause_current_file.pause_current_file);
+mp.register_event('start-file', function() { random.random() });
+mp.register_event('end-file', function() { pause_current_file.pause_current_file() });
 mp.add_key_binding('y', 'random_control', toggle(random));
 mp.add_key_binding('p', 'pause_on_finish_control', toggle(pause_current_file));
