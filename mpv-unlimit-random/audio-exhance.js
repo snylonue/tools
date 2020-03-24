@@ -1,5 +1,7 @@
 'use_strict';
 
+var osd = mp.osd_message;
+
 var random = {
 	is_enabled: false,
 	random: function() {
@@ -12,7 +14,7 @@ var random = {
 	},
 	set_is_enabled: function(val) {
 		this.is_enabled = val;
-		mp.osd_message('Random: ' + (this.is_enabled ? 'yes' : 'no'));
+		osd('Random: ' + (this.is_enabled ? 'yes' : 'no'));
 	},
 }
 var pause_current_file = {
@@ -24,7 +26,7 @@ var pause_current_file = {
 	},
 	set_is_enabled: function(val) {
 		this.is_enabled = val;
-		mp.osd_message('Pause current file: ' + (this.is_enabled ? 'yes' : 'no'));
+		osd('Pause current file: ' + (this.is_enabled ? 'yes' : 'no'));
 	},
 }
 
@@ -41,6 +43,6 @@ function toggle(obj) {
 }
 
 mp.register_event('start-file', function() { random.random() });
-mp.register_event('end-file', function() { pause_current_file.pause_current_file() });
+mp.register_event('end-file', function(event) { pause_current_file.pause_current_file(event) });
 mp.add_key_binding('y', 'random_control', toggle(random));
 mp.add_key_binding('p', 'pause_on_finish_control', toggle(pause_current_file));
