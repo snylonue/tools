@@ -22,6 +22,7 @@ var pause_current_file = {
 	pause_current_file: function(event) {
 		if (this.is_enabled && event.reason === 'eof') {
 			mp.command('cycle pause');
+			toggle(this);
 		}
 	},
 	set_is_enabled: function(val) {
