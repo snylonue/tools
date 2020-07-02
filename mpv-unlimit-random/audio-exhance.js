@@ -9,7 +9,6 @@ var random = {
 			do {
 				shuffle();
 			} while (is_end_of_playlist());
-			mp.msg.info("Playlist shuffled")
 		}
 	},
 	set_is_enabled: function(val) {
@@ -33,6 +32,7 @@ var pause_current_file = {
 
 function shuffle() {
 	mp.command('playlist-shuffle');
+	mp.msg.info("Playlist shuffled");
 }
 function is_end_of_playlist() {
 	return mp.get_property_number('playlist-pos-1') === mp.get_property_number('playlist-count');
