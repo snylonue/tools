@@ -4,15 +4,19 @@ var osd = mp.osd_message;
 
 var random = {
 	is_enabled: false,
+	loop_playlist: '',
 	random: function() {
 		if (this.is_enabled) {
-			do {
-				shuffle();
-			} while (is_end_of_playlist());
+			shuffle();
 		}
 	},
 	set_is_enabled: function(val) {
 		this.is_enabled = val;
+		if (this.is_enabled) {
+			mp.set_property('loop-playlist', 'yes');
+		} else {
+			mp.set_property('loop-playlist', this.loop_playlist);
+		}
 		osd('Random: ' + (this.is_enabled ? 'yes' : 'no'));
 	},
 }
@@ -43,6 +47,7 @@ function toggle(obj) {
 	};
 }
 
+random.loop_playlist = mp.get_property('loop-playlist');
 mp.register_event('start-file', function() { random.random() });
 mp.register_event('end-file', function(event) { pause_current_file.pause_current_file(event) });
 mp.add_key_binding('y', 'random_control', toggle(random));
